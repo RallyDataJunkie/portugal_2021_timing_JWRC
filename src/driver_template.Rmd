@@ -14,13 +14,40 @@ driver_rebased = rebase(full_splits_wide, driverCode,
 split_N_col_idx = which(colnames(driver_rebased) == 'split_N')[[1]]
 
 caption = paste0(stage_info_$code, ' split delta — ', driverCode)
-driver_rebased[,c('code',split_names)] %>%
-                  filter_at(vars(starts_with("split_")),
-                                all_vars(! is.na(.)))  %>%
+wide_splits_rebased = driver_rebased[,c('code',split_names)] %>%
+                        filter_at(vars(starts_with("split_")),
+                                    all_vars(! is.na(.)))  
+
+wide_splits_rebased %>%
             formattable(align='c',
                     list(area(col = 2:split_N_col_idx) ~ color_tile2(c("green",'white',"red")),
                  entryId=FALSE), caption=caption )
 ```
+
+
+```{r}
+# TO DO
+# the off_the_pace chart, and the simple max assignment, fail??
+long_splits_rebased = wide_splits_rebased %>%
+  pivot_longer(split_names,
+                   names_to = "splitname",
+                   values_to = "sectionDurationS") %>%
+  merge(splits_locations[,c('splitname','distance')],
+         by='splitname')
+
+zero_df = data.frame(code=unique(long_splits_rebased$code)) %>%
+            mutate(distance=0, sectionDurationS=0, splitname = 'split_0')
+
+long_splits_rebased = bind_rows(long_splits_rebased, zero_df)
+
+long_splits_rebased %>%
+        off_the_pace_chart(dist='distance',
+                           t='sectionDurationS',
+                           #label_typ='ggrepel',
+                           code='code', yflip=TRUE)
+``` 
+
+
 
 ### Within-Split Duration Deltas
 
